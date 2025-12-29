@@ -1,158 +1,138 @@
 import ast
-import json
-import subprocess
+import traceback
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Optional, List
 
 @dataclass
 class Issue:
-    tool: str
-    code: str
+    error_type: str
     message: str
     explanation: str
     suggestion: str
-    line: int
-    col: int
-    end_line: Optional[int] = None
-    end_col: Optional[int] = None
-    severity: str = "warning"
+    line: Optional[int]
+    severity: str = "error"
 
-RUFF_EXPLAIN: Dict[str, Dict[str, str]] = {
-    # Use of AI - lines --> 22, 27, 32, 37
-    "F401": {
-        "explanation": "You are importing something, you didnt use. It is not a mistake, but it is sure waste of code.",
-        "suggestion": "Delete that import or just use it."
-    },
-    
-    "F841": {
-        "explanation": "Variable gets the value, but it is never used. Usually marked as bug or waste of code.",
-        "suggestion": "Use that variable or just delete it. If it is on purpose, use '_' after the variable, example: --> 'x_ = 10'"
-    },
 
-    "E722": {
-        "explanation": "You are getting 'except: ' without a type of exception. Thats dangerous, because it hides KeyboardInterrupt or SystemExit",
-        "suggestion": "Use the type of exception for example --> 'except ValueError:' or at least --> 'except Exception' if you are unsure of type of exception"
-    },
+ERROR_EXPLAIN = {
+    "SyntaxError": (
+        "There is a Syntax error in the code - Python doesnt understand the structure",
+        "Check the ':' or '()' or identations. Very often after new defined function."
+    ),
+    "IndentationError": (
+        "Indent of the code is wrong - Python is very sensitive on this type of error",
+        "Check tabs or spaces. Very often after ':' or at the beginning of new line"
+    ),
+    "NameError": (
+        "You use variable or function, that doesnt exist in the code",
+        "Check a typo or if the variable or function was even made"
+    ),
+    "TypeError": (
+        "You are trying to combine incompatible types, such as a number and a string",
+        "Check the types of variables with function: type('variable')"
+    ),
+    "ValueError": (
+        "Type is correct, but the value doesnt isnt correct",
+        "Check the input value or except it with condition"
+    ),
+    "ZeroDivisionError": (
+        "You are trying to divide with a zero.",
+        "Before dividing you should check, that the denominator (number you divide with) is not zero."
+    ),
+    "IndexError": (
+        "You are trying to access a list element, outside its valid range",
+        "Check the length of the list by function: len('list')."
+    ),
+    "KeyError": (
+        "Dictionary doesnt obtain that key",
+        "Check the keys or do this function: dict.get()."
+    ),
+    "AttributeError": (
+        "The object does not have this attribute or method",
+        "Check the objects type and the available methods"
+    ),
+    "EOFError": (
+        "Program expected input, but it didnt get any.",
+        "Check the use of input() or input of data."
+    ),
+}
 
-    "E501": {
-        "explanation": "Line of code is too long - readability goes down and it is worse to keep it together",
-        "suggestion": "Try to use variables to minimize the line."
-    }
-}  
 
-def analyze_python_syntax(code: str) -> List[Issue]:
+def check_syntax(code: str) -> Optional[Issue]:
     try:
         ast.parse(code)
-        return []
-    except SyntaxError as e:
-        # Use of AI - lines --> 49, 50
-        line = int(getattr(e, "lineno", 1) or 1)
-        col = int(getattr(e, "offset", 0) or 0)
-        msg = (e.msg or "Syntax error").strip()
-        return [Issue(
-            tool="python",
-            code="SYNTAX",
-            message=msg,
-            explanation="Python parser got a failure of syntax. It does mean that often ':', '()', '\"', or 'just indentation'",
-            suggestion="Control that line --> especially to 'if/for/def' at the end of the line it needs to have ':' or look for '()' or indents",
-            line=line,
-            col=col,
-            severity="error"
-        )]
-    
-def run_ruff(code: str) -> List[Issue]:
-    try:
-        proc = subprocess.run(
-            #Use of AI - line --> 67
-            ["ruff", "check", "-", "--format", "json"],
-            input=code.encode("utf-8"),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            check=False,
+        return None
+    except (SyntaxError, IndentationError) as e:
+        error_type = type(e).__name__
+        explanation, suggestion = ERROR_EXPLAIN.get(
+            error_type,
+            ("Syntax error in the code", "Check the code structure")
         )
-    except FileNotFoundError:
-        return [Issue(
-            tool="ruff",
-            code="RUFF_NOT_FOUND",
-            message="Ruff is not installed or is not in PATH",
-            explanation="Lint engine misses, i can do only syntax check",
-            suggestion="Install 'ruff' and run the app from the same enviroment",
-            line=1,
-            col=0,
-            severity="error",
-        )]
 
-    if proc.returncode not in (0, 1):
-        err = proc.stderr.decode("utf-8", errors="replace").strip()
-        return [Issue(
-            tool="ruff",
-            code="RUFF_ERROR",
-            message="Ruff analyze failed",
-            explanation="Ruff ran into an internal error or wrong input",
-            suggestion=f"Try it again. Detail: {err[:200]}",
-            line=1,
-            col=0,
-            severity="error",
-        )]
+        return Issue(
+            error_type=error_type,
+            message=e.msg,
+            explanation=explanation,
+            suggestion=suggestion,
+            line=e.lineno,
+        )
 
-    out = proc.stdout.decode("utf-8", errors="replace").strip()
-    if not out:
-        return []
 
-    # Use of AI - lines --> 103, 104
-    data: List[Dict[str, Any]] = json.loads(out)
-    issues: List[Issue] = []
+def run_code(code: str) -> Optional[Issue]:
+    try:
+        safe_globals = {
+            "__builtins__": {
+                "print": print,
+                "int": int,
+                "float": float,
+                "str": str,
+                "len": len,
+                "range": range,
+                "input": input,
+            }
+        }
 
-    for item in data:
-        code_id = item.get("code", "RUFF")
-        msg = (item.get("message", "Issue") or "").strip()
+        exec(code, safe_globals)
+        return None
 
-        loc = item.get("location") or {}
-        end_loc = item.get("end_location") or {}
+    except KeyboardInterrupt:
+        return Issue(
+            error_type="KeyboardInterrupt",
+            message="Program was manually stopped",
+            explanation="Code run was stopped by an user",
+            suggestion="Dont end the program, if it isnt on purpose",
+            line=None,
+        )
 
-        line = int(loc.get("row", 1))
-        col = int(loc.get("column", 0))
-        end_line = end_loc.get("row")
-        end_col = end_loc.get("column")
+    except Exception as e:
+        error_type = type(e).__name__
+        explanation, suggestion = ERROR_EXPLAIN.get(
+            error_type,
+            ("The program went into a error", "Check the error message")
+        )
 
-        meta = RUFF_EXPLAIN.get(code_id)
-        if meta:
-            explanation = meta["explanation"]
-            suggestion = meta["suggestion"]
-        else:
-            # Use of AI - lines --> 124, 125
-            explanation = "Lint tool found problem with style. It doesnt need to break the program, but often it is bug or unreadable code"
-            suggestion = "Read a warning a repair the code by it. If it is false-positive, you can turn off the rule later."  
+        tb = traceback.extract_tb(e.__traceback__)
+        # Use of AI - line --> 115
+        line = tb[-1].lineno if tb else None
 
-        severity = "warning"
-        if code_id.startswith(("F", "E9")):
-            severity = "error"
-        elif code_id.startswith(("E", "W")):
-            severity = "warning"
-        else:
-            severity = "info"
-
-        issues.append(Issue(
-            tool="ruff",
-            code=code_id,
-            message=msg,
+        return Issue(
+            error_type=error_type,
+            message=str(e),
             explanation=explanation,
             suggestion=suggestion,
             line=line,
-            col=col,
-            end_line=int(end_line) if end_line is not None else None,
-            end_col=int(end_col) if end_col is not None else None,
-            severity=severity,
-        ))
-    return issues
+        )
+
 
 def analyze_code(code: str) -> List[Issue]:
     issues: List[Issue] = []
-    issues.extend(analyze_python_syntax(code))
-    issues.extend(run_ruff(code))
 
-    severity_order = {"error": 0, "warning": 1, "info": 2}
-    #Use of AI - line --> 156
-    issues.sort(key=lambda x: (severity_order.get(x.severity, 9), x.line, x.col))
+    syntax_issue = check_syntax(code)
+    if syntax_issue:
+        issues.append(syntax_issue)
+        return issues
+
+    runtime_issue = run_code(code)
+    if runtime_issue:
+        issues.append(runtime_issue)
+
     return issues
-                          

@@ -1,0 +1,9 @@
+{% extends "layout.html" %}
+{% block title %}Analyze - Code Tutor{% endblock %}
+{% block content %}
+    <h1>Analyze Python code</h1>
+    <form method="post" action="{{ url_for('analyze') }}">
+        <textarea name="code" class="editor" spellcheck="false">{{ code }}</textarea>
+        <button class="btn" type="submit">Analyze</button>
+    </form>
+{% endblock %}    

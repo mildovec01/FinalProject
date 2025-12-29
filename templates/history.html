@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+{% block title %}History - Code Tutor{% endblock %}
+{% block content %}
+    <h1>History</h1>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Created</th>
+                <th>Language</th>
+                <th>Size</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in rows %}
+                <tr>
+                    <td><a href="{{ url_for('report', analysis_id=r.id) }}">#{{ r.id }}</a></td>
+                    <td class="mono">{{ r.created_at }}</td>
+                    <td>{{ r.language }}</td>
+                    <td class="mono">{{ r.size }}</td>
+                </tr>
+            {% endfor %}    
+        </tbody>
+    </table>
+{% endblock %}    

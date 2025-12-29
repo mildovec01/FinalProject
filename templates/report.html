@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+{% block title %}Report #{{ analysis.id }} - Code Tutor{% endblock %}
+
+{% block content %}
+  <h1>Report #{{ analysis.id }}</h1>
+  <p class="muted">{{ analysis.created_at }}</p>
+
+  <div class="split">
+    <section>
+      <h2>Code</h2>
+      <pre class="codebox"><code>{{ analysis.code }}</code></pre>
+    </section>
+
+    <section>
+      <h2>Issues ({{ issues|length }})</h2>
+
+      {% if issues|length == 0 %}
+        <div class="card ok"><strong>Clean.</strong> No issues found.</div>
+      {% endif %}
+
+      {% for it in issues %}
+        <div class="card {{ it.severity }}">
+          <div class="meta">
+            <span class="pill {{ it.severity }}">{{ it.severity }}</span>
+            <span class="mono">{{ it.error_type }}</span>
+            <span class="mono right">
+                <!-- Use of AI - line -> 28 -->
+              {% if it.line %}Line {{ it.line }}{% else %}Line: unknown{% endif %}
+            </span>
+          </div>
+
+          <div><strong>Message:</strong> {{ it.message }}</div>
+          <div><strong>Why:</strong> {{ it.explanation }}</div>
+          <div><strong>Fix:</strong> {{ it.suggestion }}</div>
+        </div>
+      {% endfor %}
+    </section>
+  </div>
+{% endblock %}
