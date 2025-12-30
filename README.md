@@ -1,6 +1,6 @@
 # Code Tutor – Syntax Error Explainer
 
-### Video: [Click here](https://www.youtube.com/watch?v=oKsMBicdNMY)
+### Video: [Click here](https://www.youtube.com/watch?v=oPiQNjCHjaw)
 
 ## Description
 
