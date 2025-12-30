@@ -59,13 +59,12 @@ SQLite was chosen because it is lightweight, requires no external server, and is
 AI tools were used to assist with organizing the project structure.
 
 project/
-│
 ├── app.py
 ├── helpers.py
 ├── requirements.txt
 ├── README.md
 │
-├── instance/
+├── data/
 │   └── codetutor.db
 │
 ├── templates/
@@ -75,10 +74,8 @@ project/
 │   └── history.html
 │
 ├── static/
-│   ├── css/
-│   │   └── styles.css
-│   └── js/
-│       └── script.js
+│   ├── styles.css
+│   └── script.js
 │
 └── tests/
     └── samples.py
