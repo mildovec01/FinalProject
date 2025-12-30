@@ -1,4 +1,4 @@
-# Code Tutor – Runtime & Syntax Error Explainer
+# Code Tutor – Syntax Error Explainer
 
 ### Video: [Click here](https://www.youtube.com/watch?v=oKsMBicdNMY)
 
