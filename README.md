@@ -1,6 +1,6 @@
 # Code Tutor – Runtime & Syntax Error Explainer
 
-#### Video Demo: <PUT YOUR VIDEO URL HERE>
+## Video: <PUT YOUR VIDEO URL HERE>
 
 ## Description
 
