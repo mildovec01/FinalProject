@@ -56,7 +56,7 @@ SQLite was chosen because it is lightweight, requires no external server, and is
 
 ## Project Structure
 
-I used AI as a helper to organize the project structure and improve its readability.
+AI tools were used to assist with organizing the project structure.
 
 project/
 │
