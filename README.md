@@ -1,6 +1,6 @@
 # Code Tutor – Runtime & Syntax Error Explainer
 
-### Video: <PUT YOUR VIDEO URL HERE>
+### Video: [Click here](https://www.youtube.com/watch?v=oKsMBicdNMY)
 
 ## Description
 
