@@ -64,6 +64,7 @@ project/
 ├── helpers.py
 ├── requirements.txt
 ├── README.md
+├── .gitignore
 ├── data/
 │   └── codetutor.db
 ├── templates/
